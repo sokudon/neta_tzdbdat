@@ -1,0 +1,151 @@
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+    private static void load(DataInputStream dis) throws IOException {
+        if (dis.readByte() != 1) {
+            throw new StreamCorruptedException("File format not recognised");
+        }
+        // group
+        String groupId = dis.readUTF();
+        if ("TZDB".equals(groupId) == false) {
+            throw new StreamCorruptedException("File format not recognised");
+        }
+        // versions, only keep the last one
+        int versionCount = dis.readShort();
+        for (int i = 0; i < versionCount; i++) {
+            versionId = dis.readUTF();
+
+        }
+        // regions
+        int regionCount = dis.readShort();
+        String[] regionArray = new String[regionCount];
+        for (int i = 0; i < regionCount; i++) {
+            regionArray[i] = dis.readUTF();
+        }
+        // rules
+        int ruleCount = dis.readShort();
+        ruleArray = new byte[ruleCount][];
+        for (int i = 0; i < ruleCount; i++) {
+            byte[] bytes = new byte[dis.readShort()];
+            dis.readFully(bytes);
+            ruleArray[i] = bytes;
+        }
+        // link version-region-rules, only keep the last version, if more than one
+        for (int i = 0; i < versionCount; i++) {
+            regionCount = dis.readShort();
+            regions = new String[regionCount];
+            indices = new int[regionCount];
+            for (int j = 0; j < regionCount; j++) {
+                regions[j] = regionArray[dis.readShort()];
+                indices[j] = dis.readShort();
+            }
+        }
+        // remove the following ids from the map, they
+        // are excluded from the "old" ZoneInfo
+        zones.remove("ROC");
+        for (int i = 0; i < versionCount; i++) {
+            int aliasCount = dis.readShort();
+            aliases.clear();
+            for (int j = 0; j < aliasCount; j++) {
+                String alias = regionArray[dis.readShort()];
+                String region = regionArray[dis.readShort()];
+                aliases.put(alias, region);
+            }
+        }
+        // old us time-zone names
+        aliases.putAll(ZoneId.SHORT_IDS);
+
+           /////////////////////////Ser/////////////////////////////////
+    public static ZoneInfo getZoneInfo(DataInput in, String zoneId) throws Exception {
+        byte type = in.readByte();
+        // TBD: assert ZRULES:
+        int stdSize = in.readInt();
+        long[] stdTrans = new long[stdSize];
+        for (int i = 0; i < stdSize; i++) {
+            stdTrans[i] = readEpochSec(in);
+        }
+        int [] stdOffsets = new int[stdSize + 1];
+        for (int i = 0; i < stdOffsets.length; i++) {
+            stdOffsets[i] = readOffset(in);
+        }
+        int savSize = in.readInt();
+        long[] savTrans = new long[savSize];
+        for (int i = 0; i < savSize; i++) {
+            savTrans[i] = readEpochSec(in);
+        }
+        int[] savOffsets = new int[savSize + 1];
+        for (int i = 0; i < savOffsets.length; i++) {
+            savOffsets[i] = readOffset(in);
+        }
+        int ruleSize = in.readByte();
+        ZoneOffsetTransitionRule[] rules = new ZoneOffsetTransitionRule[ruleSize];
+        for (int i = 0; i < ruleSize; i++) {
+            rules[i] = new ZoneOffsetTransitionRule(in);
+        }
+        return getZoneInfo(zoneId, stdTrans, stdOffsets, savTrans, savOffsets, rules);
+    }
+
+    public static int readOffset(DataInput in) throws IOException {
+        int offsetByte = in.readByte();
+        return offsetByte == 127 ? in.readInt() : offsetByte * 900;
+    }
+
+    static long readEpochSec(DataInput in) throws IOException {
+        int hiByte = in.readByte() & 255;
+        if (hiByte == 255) {
+            return in.readLong();
+        } else {
+            int midByte = in.readByte() & 255;
+            int loByte = in.readByte() & 255;
+            long tot = ((hiByte << 16) + (midByte << 8) + loByte);
+            return (tot * 900) - 4575744000L;
+        }
+    }// A simple/raw version of j.t.ZoneOffsetTransitionRule
+    // timeEndOfDay is included in secondOfDay as "86,400" secs.
+    private static class ZoneOffsetTransitionRule {
+        private final int month;
+        private final byte dom;
+        private final int dow;
+        private final int secondOfDay;
+        private final int timeDefinition;
+        private final int standardOffset;
+        private final int offsetBefore;
+        private final int offsetAfter;
+
+        ZoneOffsetTransitionRule(DataInput in) throws IOException {
+            int data = in.readInt();
+            int dowByte = (data & (7 << 19)) >>> 19;
+            int timeByte = (data & (31 << 14)) >>> 14;
+            int stdByte = (data & (255 << 4)) >>> 4;
+            int beforeByte = (data & (3 << 2)) >>> 2;
+            int afterByte = (data & 3);
+
+            this.month = data >>> 28;
+            this.dom = (byte)(((data & (63 << 22)) >>> 22) - 32);
+            this.dow = dowByte == 0 ? -1 : dowByte;
+            this.secondOfDay = timeByte == 31 ? in.readInt() : timeByte * 3600;
+            this.timeDefinition = (data & (3 << 12)) >>> 12;
+            this.standardOffset = stdByte == 255 ? in.readInt() : (stdByte - 128) * 900;
+            this.offsetBefore = beforeByte == 3 ? in.readInt() : standardOffset + beforeByte * 1800;
+            this.offsetAfter = afterByte == 3 ? in.readInt() : standardOffset + afterByte * 1800;
+        }

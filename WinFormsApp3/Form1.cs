@@ -4,7 +4,12 @@ using System.Net;
 using System.Security.Policy;
 using System.Text;
 using System.Text.Encodings;
-
+using System.Buffers.Binary;
+using System.Web;
+using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
+using System.Runtime.CompilerServices;
+using static WinFormsApp3.Form1.ZoneInfoReader;
 
 namespace WinFormsApp3
 {
@@ -16,151 +21,144 @@ namespace WinFormsApp3
         }
 
 
-        /*
-         
-    private static void load(DataInputStream dis) throws IOException {
-        if (dis.readByte() != 1) {
-            throw new StreamCorruptedException("File format not recognised");
-        }
-        // group
-        String groupId = dis.readUTF();
-        if ("TZDB".equals(groupId) == false) {
-            throw new StreamCorruptedException("File format not recognised");
-        }
-        // versions, only keep the last one
-        int versionCount = dis.readShort();
-        for (int i = 0; i < versionCount; i++) {
-            versionId = dis.readUTF();
-
-        }
-        // regions
-        int regionCount = dis.readShort();
-        String[] regionArray = new String[regionCount];
-        for (int i = 0; i < regionCount; i++) {
-            regionArray[i] = dis.readUTF();
-        }
-        // rules
-        int ruleCount = dis.readShort();
-        ruleArray = new byte[ruleCount][];
-        for (int i = 0; i < ruleCount; i++) {
-            byte[] bytes = new byte[dis.readShort()];
-            dis.readFully(bytes);
-            ruleArray[i] = bytes;
-        }
-        // link version-region-rules, only keep the last version, if more than one
-        for (int i = 0; i < versionCount; i++) {
-            regionCount = dis.readShort();
-            regions = new String[regionCount];
-            indices = new int[regionCount];
-            for (int j = 0; j < regionCount; j++) {
-                regions[j] = regionArray[dis.readShort()];
-                indices[j] = dis.readShort();
-            }
-        }
-        // remove the following ids from the map, they
-        // are excluded from the "old" ZoneInfo
-        zones.remove("ROC");
-        for (int i = 0; i < versionCount; i++) {
-            int aliasCount = dis.readShort();
-            aliases.clear();
-            for (int j = 0; j < aliasCount; j++) {
-                String alias = regionArray[dis.readShort()];
-                String region = regionArray[dis.readShort()];
-                aliases.put(alias, region);
-            }
-        }
-        // old us time-zone names
-        aliases.putAll(ZoneId.SHORT_IDS);
-
-           /////////////////////////Ser/////////////////////////////////
-    public static ZoneInfo getZoneInfo(DataInput in, String zoneId) throws Exception {
-        byte type = in.readByte();
-        // TBD: assert ZRULES:
-        int stdSize = in.readInt();
-        long[] stdTrans = new long[stdSize];
-        for (int i = 0; i < stdSize; i++) {
-            stdTrans[i] = readEpochSec(in);
-        }
-        int [] stdOffsets = new int[stdSize + 1];
-        for (int i = 0; i < stdOffsets.length; i++) {
-            stdOffsets[i] = readOffset(in);
-        }
-        int savSize = in.readInt();
-        long[] savTrans = new long[savSize];
-        for (int i = 0; i < savSize; i++) {
-            savTrans[i] = readEpochSec(in);
-        }
-        int[] savOffsets = new int[savSize + 1];
-        for (int i = 0; i < savOffsets.length; i++) {
-            savOffsets[i] = readOffset(in);
-        }
-        int ruleSize = in.readByte();
-        ZoneOffsetTransitionRule[] rules = new ZoneOffsetTransitionRule[ruleSize];
-        for (int i = 0; i < ruleSize; i++) {
-            rules[i] = new ZoneOffsetTransitionRule(in);
-        }
-        return getZoneInfo(zoneId, stdTrans, stdOffsets, savTrans, savOffsets, rules);
-    }
-
-    public static int readOffset(DataInput in) throws IOException {
-        int offsetByte = in.readByte();
-        return offsetByte == 127 ? in.readInt() : offsetByte * 900;
-    }
-
-    static long readEpochSec(DataInput in) throws IOException {
-        int hiByte = in.readByte() & 255;
-        if (hiByte == 255) {
-            return in.readLong();
-        } else {
-            int midByte = in.readByte() & 255;
-            int loByte = in.readByte() & 255;
-            long tot = ((hiByte << 16) + (midByte << 8) + loByte);
-            return (tot * 900) - 4575744000L;
-        }
-    }// A simple/raw version of j.t.ZoneOffsetTransitionRule
-    // timeEndOfDay is included in secondOfDay as "86,400" secs.
-    private static class ZoneOffsetTransitionRule {
-        private final int month;
-        private final byte dom;
-        private final int dow;
-        private final int secondOfDay;
-        private final int timeDefinition;
-        private final int standardOffset;
-        private final int offsetBefore;
-        private final int offsetAfter;
-
-        ZoneOffsetTransitionRule(DataInput in) throws IOException {
-            int data = in.readInt();
-            int dowByte = (data & (7 << 19)) >>> 19;
-            int timeByte = (data & (31 << 14)) >>> 14;
-            int stdByte = (data & (255 << 4)) >>> 4;
-            int beforeByte = (data & (3 << 2)) >>> 2;
-            int afterByte = (data & 3);
-
-            this.month = data >>> 28;
-            this.dom = (byte)(((data & (63 << 22)) >>> 22) - 32);
-            this.dow = dowByte == 0 ? -1 : dowByte;
-            this.secondOfDay = timeByte == 31 ? in.readInt() : timeByte * 3600;
-            this.timeDefinition = (data & (3 << 12)) >>> 12;
-            this.standardOffset = stdByte == 255 ? in.readInt() : (stdByte - 128) * 900;
-            this.offsetBefore = beforeByte == 3 ? in.readInt() : standardOffset + beforeByte * 1800;
-            this.offsetAfter = afterByte == 3 ? in.readInt() : standardOffset + afterByte * 1800;
-        }
-
-         */
 
         private static Dictionary<string, string> zones = new Dictionary<string, string>();
         private static Dictionary<string, string> aliases = new Dictionary<string, string>();
         private static string[] regionArray; // 事前に読み込まれたタイムゾーンID配列
-        private static string[] regions; 
+        private static string[] regions;
         private static int[] indices;
         private static byte[][] ruleArray;
         private static int[] ruleArray_offset;
-         int target_index = -1;
+        int target_index = -1;
+
+        private void time(long[] SavTrans, int[] SavOffsets)
+        {
+            try
+            {
+                DateTime utc = DateTime.UtcNow;
+                string tzst = comboBox1.Text;
+                string tmp = "";
+
+                bool ch = div3600.Checked;
+                bool sun = sunfix.Checked;
+
+                // UTC時間をUnixタイムスタンプ（秒）に変換
+                long unixTimestamp = ((DateTimeOffset)utc).ToUnixTimeSeconds();
+
+                int svlen = SavTrans.Length;
+                if (svlen == 0)
+                {
+                    double offsetSeconds = Convert.ToDouble(SavOffsets[0]);
+                    int offsetSeconds_i = SavOffsets[0];
+                    if (offsetSeconds_i > sun_big_offset * 3600)
+                    {
+                        offsetSeconds_i = offsetSeconds_i - sun_negative_sifhter * 3600;
+                        offsetSeconds = offsetSeconds - sun_negative_sifhter * 3600;
+                    }
+                    var offset_st = (offsetSeconds_i / 3600).ToString("D2") + ":" + ((offsetSeconds_i % 3600) / 60).ToString("D2");
+
+                    DateTimeOffset localTime = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).AddSeconds(offsetSeconds);
+                    tmp = localTime.ToString("yyyy-MM-ddTHH:mm:ss+" + offset_st).Replace("+-", "-");
+                    tmp = tmp + $"\r\nindex:0\r\ntradition:null\r\noffset0:{SavOffsets[0]}";
+
+                    label1.Text = tmp;
+                    return;
+                }
+
+
+
+                // バイナリーサーチを実行
+                long max = SavTrans[svlen - 1];
+                long min = SavTrans[0];
+                int index = Array.BinarySearch(SavTrans, unixTimestamp);
+                if (unixTimestamp > max)
+                {
+                    index = svlen - 1;
+                }
+                else if (unixTimestamp < min)
+                {
+                    index = -1;
+                }
+                else if (index < 0)
+                {
+                    index = -(index+1)-1; 
+                }
+                if(index < 0)
+                {
+                    index = -1;
+                }
+
+                if (index >= 0 && index < SavOffsets.Length)
+                {
+                    double offsetSeconds = Convert.ToDouble(SavOffsets[index + 1]);
+                    int offsetSeconds_i = SavOffsets[index + 1];
+                    if (offsetSeconds > sun_big_offset * 3600)
+                    {
+                        offsetSeconds = offsetSeconds - sun_negative_sifhter * 3600;
+                        offsetSeconds_i = offsetSeconds_i - sun_negative_sifhter * 3600;
+                    }
+                    var offset_st = (offsetSeconds_i / 3600).ToString("D2") + ":" + ((offsetSeconds_i % 3600) / 60).ToString("D2");
+
+                    DateTimeOffset localTime = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).AddSeconds(offsetSeconds);
+                    tmp = localTime.ToString("yyyy-MM-ddTHH:mm:ss+" + offset_st).Replace("+-","-");
+                }
+                else
+                {
+                    tmp = "not found";
+                    label1.Text = tmp;
+                    return;
+                }
+                var trans = SavTrans[index];
+                var tt = "";
+                if (ch)
+                {
+                    const long MinSeconds = -62135596800L;
+                    const long MaxSeconds = 253402300799L;
+                    if (trans >= MinSeconds && trans <= MaxSeconds)
+                    {
+
+                        DateTime utcDateTime = DateTimeOffset.FromUnixTimeSeconds(trans).UtcDateTime;
+                        tt = utcDateTime.ToString("u");
+                    }
+                    else
+                    {
+                        tt = "OutOfRange{trans},";
+                    }
+                }
+                double offsetSeconds_ii = SavOffsets[index + 1];
+                if (sun)
+                {
+                    if (offsetSeconds_ii > sun_big_offset * 3600)
+                    {
+                        offsetSeconds_ii = offsetSeconds_ii - sun_negative_sifhter * 3600;
+                    }
+                    offsetSeconds_ii = offsetSeconds_ii / 3600;
+                }
+
+
+
+                tmp = tmp + $"\r\nindex+1:{index + 1}\r\ntradition:{tt}\r\noffset+1:{offsetSeconds_ii}";
+
+                label1.Text = tmp;
+            }
+            catch (Exception ex)
+            {
+                label1.Text = ex.Message;
+            }
+        }
 
         private void button1_Click(object sender, EventArgs e)
         {
             string tzst = comboBox1.Text;
+
+
+            foreach (var pair in ShortIds)
+            {
+                if (tzst == pair.Key)
+                {
+                    tzst = pair.Value;
+                }
+            }
 
             string filePath = "tzdb.dat"; // tzdb.datファイルのパスを指定してください
             byte[] bs = File.ReadAllBytes(filePath);
@@ -206,8 +204,8 @@ namespace WinFormsApp3
             { // rules
                 int ruleCount = bs[pointer] * 256 + bs[pointer + 1];
                 pointer += 2;
-                ruleArray = new byte[ruleCount][]; 
-                
+                ruleArray = new byte[ruleCount][];
+
                 sb.AppendLine($"ruleCount:{ruleCount}");
 
                 ruleArray_offset = new int[ruleCount];
@@ -220,7 +218,7 @@ namespace WinFormsApp3
                     Array.Copy(bs, pointer, bytes, 0, length);
                     pointer += length;
                     ruleArray[i] = bytes;
-                    ruleArray_offset[i] =pointer - length;
+                    ruleArray_offset[i] = pointer - length;
                 }
 
                 // link version-region-rules, only keep the last version, if more than one
@@ -394,7 +392,7 @@ namespace WinFormsApp3
                 ZoneOffsetTransitionRule[] rules = new ZoneOffsetTransitionRule[ruleSize];
                 for (int i = 0; i < ruleSize; i++)
                 {
-                    rules[i] = new ZoneOffsetTransitionRule(bs, ref pointer); // 仮実装
+                    rules[i] = new ZoneOffsetTransitionRule(bs, ref pointer);
                 }
 
                 return GetZoneInfo(zoneId, stdTrans, stdOffsets, savTrans, savOffsets, rules);
@@ -402,8 +400,27 @@ namespace WinFormsApp3
 
             public static int ReadOffset(byte[] bs, ref int pointer)
             {
-                int offsetByte = bs[pointer++]; // readByte
-                return offsetByte == 127 ? BitConverter.ToInt32(bs, pointer += 4) - 4 : offsetByte * 900;
+                int offsetByte = bs[pointer]; // readByte
+                pointer++;
+                int pp = Convert.ToInt32(pointer);
+                string log2 = pp.ToString("X8");
+                string logw = offsetByte.ToString("X");
+
+                string ab = log2 + logw;
+                string aab = log2 + logw;
+
+                if (offsetByte == 127)
+                {
+                    byte[] b = new byte[4];
+                    Array.Copy(bs, pointer, b, 0, 4);
+                    Array.Reverse(b);
+                    pointer += 4; // 4バイト読み込んだのでポインタを進める
+                    return BitConverter.ToInt32(b, 0);
+                }
+                else
+                {
+                    return offsetByte * 900;
+                }
             }
 
             public static long ReadEpochSec(byte[] bs, ref int pointer)
@@ -411,7 +428,7 @@ namespace WinFormsApp3
                 int hiByte = bs[pointer++] & 255; // readByte
                 if (hiByte == 255)
                 {
-                    long result = BitConverter.ToInt64(bs, pointer);
+                    long result = BinaryPrimitives.ReadInt64BigEndian(bs.AsSpan(pointer));
                     pointer += 8; // readLong
                     return result;
                 }
@@ -424,7 +441,7 @@ namespace WinFormsApp3
                 }
             }
 
-            // 仮の ZoneInfo クラス
+
             public class ZoneInfo
             {
                 public string ZoneId { get; }
@@ -445,22 +462,64 @@ namespace WinFormsApp3
                 }
             }
 
-            // 仮の ZoneOffsetTransitionRule クラス
+
             public class ZoneOffsetTransitionRule
             {
+                private readonly int month;
+                private readonly byte dom;
+                private readonly int dow;
+                private readonly int secondOfDay;
+                private readonly int timeDefinition;
+                private readonly int standardOffset;
+                private readonly int offsetBefore;
+                private readonly int offsetAfter;
+
                 public ZoneOffsetTransitionRule(byte[] bs, ref int pointer)
                 {
-                    // 実際の実装が必要。仮にポインタを進めるだけ
-                    pointer += 20; // 仮のサイズ
+                    int data = BinaryPrimitives.ReadInt32BigEndian(bs.AsSpan(pointer));
+                    pointer += 4;
+
+                    int dowByte = (data & (7 << 19)) >>> 19;
+                    int timeByte = (data & (31 << 14)) >>> 14;
+                    int stdByte = (data & (255 << 4)) >>> 4;
+                    int beforeByte = (data & (3 << 2)) >>> 2;
+                    int afterByte = (data & 3);
+
+                    this.month = data >>> 28;
+                    this.dom = (byte)(((data & (63 << 22)) >>> 22) - 32);
+                    this.dow = dowByte == 0 ? -1 : dowByte;
+                    this.secondOfDay = timeByte == 31 ? BinaryPrimitives.ReadInt32BigEndian(bs.AsSpan(pointer)) : timeByte * 3600;
+                    if (timeByte == 31) pointer += 4;
+                    this.timeDefinition = (data & (3 << 12)) >>> 12;
+                    this.standardOffset = stdByte == 255 ? BinaryPrimitives.ReadInt32BigEndian(bs.AsSpan(pointer)) : (stdByte - 128) * 900;
+                    if (stdByte == 255) pointer += 4;
+                    this.offsetBefore = beforeByte == 3 ? BinaryPrimitives.ReadInt32BigEndian(bs.AsSpan(pointer)) : standardOffset + beforeByte * 1800;
+                    if (beforeByte == 3) pointer += 4;
+                    this.offsetAfter = afterByte == 3 ? BinaryPrimitives.ReadInt32BigEndian(bs.AsSpan(pointer)) : standardOffset + afterByte * 1800;
+                    if (afterByte == 3) pointer += 4;
                 }
+
+                // 必要に応じてプロパティを追加
+                public int Month => month;
+                public byte DayOfMonth => dom;
+                public int DayOfWeek => dow;
+                public int SecondOfDay => secondOfDay;
+                public int TimeDefinition => timeDefinition;
+                public int StandardOffset => standardOffset;
+                public int OffsetBefore => offsetBefore;
+                public int OffsetAfter => offsetAfter;
             }
 
-            // 仮の GetZoneInfo メソッド
             private static ZoneInfo GetZoneInfo(string zoneId, long[] stdTrans, int[] stdOffsets, long[] savTrans, int[] savOffsets, ZoneOffsetTransitionRule[] rules)
             {
                 return new ZoneInfo(zoneId, stdTrans, stdOffsets, savTrans, savOffsets, rules);
             }
         }
+
+        //+40以上のオフセットを持つタイムゾーンのための補正、-64時間
+        //マイナス回避のためだと思われる 2^6 =64 だからシフトかなんか
+        const int sun_negative_sifhter = 64;
+        const int sun_big_offset = 40;
 
         private void button2_Click(object sender, EventArgs e)
         {
@@ -473,7 +532,8 @@ namespace WinFormsApp3
                 textBox3.Text = "Not Found";
                 return;
             }
-            bool ch = checkBox1.Checked;
+            bool ch = div3600.Checked;
+            bool sun = sunfix.Checked;
 
             var zoneInfo = ZoneInfoReader.GetZoneInfo(bs, ref pointer, tzst);
             StringBuilder sb = new StringBuilder();
@@ -506,13 +566,20 @@ namespace WinFormsApp3
             sb.Append("StdOffsets: ");
             foreach (var offset in zoneInfo.StdOffsets)
             {
+                double offset_d = offset;
+                if (sun & offset_d > sun_big_offset * 3600)
+                {
+                    offset_d = offset_d - sun_negative_sifhter * 3600;
+                }
                 if (ch)
-                {   
-                    var offset_d = offset /3600;
+                {
+                    offset_d = offset_d / 3600;
+
                     sb.Append(offset_d.ToString() + ",");
                 }
-                else { 
-                sb.Append(offset.ToString() + ",");
+                else
+                {
+                    sb.Append(offset_d.ToString() + ",");
                 }
             }
             sb.AppendLine();
@@ -544,21 +611,61 @@ namespace WinFormsApp3
             sb.Append("SavOffsets: ");
             foreach (var offset in zoneInfo.SavOffsets)
             {
+
+                double offset_d = offset;
+                if (sun & offset_d > sun_big_offset * 3600)
+                {
+                    offset_d = offset_d - sun_negative_sifhter * 3600;
+                }
                 if (ch)
                 {
-                    var offset_d = offset / 3600;
+                    offset_d = offset_d / 3600;
+
                     sb.Append(offset_d.ToString() + ",");
                 }
                 else
                 {
-                    sb.Append(offset.ToString() + ",");
+                    sb.Append(offset_d.ToString() + ",");
+                }
+            }
+
+            sb.AppendLine();
+            sb.AppendLine("ZoneInfoRules: ");
+            foreach (var rr in zoneInfo.Rules)
+            {
+                if (ch)
+                {
+                    var tradision_moment = (rr.SecondOfDay / 3600).ToString("D2") + ":" + ((rr.SecondOfDay % 3600)/60).ToString("D2");
+                    double offset_d = rr.StandardOffset / 3600;
+                    double offset_b = rr.OffsetBefore / 3600;
+                    double offset_a = rr.OffsetAfter / 3600;
+                    sb.AppendLine($"Month{rr.Month},DayOfMonth:{rr.DayOfMonth},DayOfWeek:{rr.DayOfWeek}" +
+                    $", SecondOfDay:{tradision_moment},TimeDefinition: {rr.TimeDefinition}," +
+                    $"StandardOffset: {offset_d},OffsetBefore: {offset_b},OffsetAfter: {offset_a}");
+                }
+                else
+                {
+                    sb.AppendLine($"Month{rr.Month},DayOfMonth:{rr.DayOfMonth},DayOfWeek:{rr.DayOfWeek}" +
+                    $", SecondOfDay:{rr.SecondOfDay},TimeDefinition: {rr.TimeDefinition}," +
+                    $"StandardOffset: {rr.StandardOffset},OffsetBefore: {rr.OffsetBefore},OffsetAfter: {rr.OffsetAfter}");
                 }
             }
             sb.AppendLine();
 
             textBox3.Text = sb.ToString();
+
+            time(zoneInfo.SavTrans, zoneInfo.SavOffsets);
         }
 
+        private void checkBox2_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
     }
-    
+
 }

@@ -34,8 +34,9 @@
             comboBox1 = new ComboBox();
             textBox3 = new TextBox();
             div3600 = new CheckBox();
-            sunfix = new CheckBox();
             label1 = new Label();
+            textBox4 = new TextBox();
+            label2 = new Label();
             SuspendLayout();
             // 
             // button1
@@ -99,19 +100,6 @@
             div3600.UseVisualStyleBackColor = true;
             div3600.CheckedChanged += checkBox1_CheckedChanged;
             // 
-            // sunfix
-            // 
-            sunfix.AutoSize = true;
-            sunfix.Checked = true;
-            sunfix.CheckState = CheckState.Checked;
-            sunfix.Location = new Point(359, 388);
-            sunfix.Name = "sunfix";
-            sunfix.Size = new Size(206, 24);
-            sunfix.TabIndex = 7;
-            sunfix.Text = "sun_negative_shifter_fix-64";
-            sunfix.UseVisualStyleBackColor = true;
-            sunfix.CheckedChanged += checkBox2_CheckedChanged;
-            // 
             // label1
             // 
             label1.AutoSize = true;
@@ -122,13 +110,30 @@
             label1.TabIndex = 8;
             label1.Text = "TIME(not support rules)";
             // 
+            // textBox4
+            // 
+            textBox4.Location = new Point(571, 357);
+            textBox4.Name = "textBox4";
+            textBox4.Size = new Size(153, 27);
+            textBox4.TabIndex = 9;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(491, 360);
+            label2.Name = "label2";
+            label2.Size = new Size(74, 20);
+            label2.TabIndex = 10;
+            label2.Text = "TIMETEST";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(778, 450);
+            Controls.Add(label2);
+            Controls.Add(textBox4);
             Controls.Add(label1);
-            Controls.Add(sunfix);
             Controls.Add(div3600);
             Controls.Add(textBox3);
             Controls.Add(comboBox1);
@@ -149,7 +154,8 @@
         private ComboBox comboBox1;
         private TextBox textBox3;
         private CheckBox div3600;
-        private CheckBox sunfix;
         private Label label1;
+        private TextBox textBox4;
+        private Label label2;
     }
 }

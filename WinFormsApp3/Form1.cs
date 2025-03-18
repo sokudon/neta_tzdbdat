@@ -35,21 +35,32 @@ namespace WinFormsApp3
         {
             try
             {
-                DateTime utc = DateTime.UtcNow;
+                DateTime date;
+                string dd= textBox4.Text;
+                if (!DateTime.TryParse(dd, out date))
+                {
+                    label1.Text = "Invalid date format";
+                    return;
+                }
+
                 string tzst = comboBox1.Text;
                 string tmp = "";
 
                 bool ch = div3600.Checked;
-                bool sun = sunfix.Checked;
 
                 // UTC時間をUnixタイムスタンプ（秒）に変換
-                long unixTimestamp = ((DateTimeOffset)utc).ToUnixTimeSeconds();
+                long unixTimestamp = ((DateTimeOffset)date).ToUnixTimeSeconds();
 
                 int svlen = SavTrans.Length;
-                if (svlen == 0)
+                if (svlen <2)
                 {
-                    double offsetSeconds = Convert.ToDouble(SavOffsets[0]);
-                    int offsetSeconds_i = SavOffsets[0];
+                    int set_index = 0;
+                    if (svlen == 1)
+                    {
+                        set_index = 1;
+                    }
+                    double offsetSeconds = Convert.ToDouble(SavOffsets[set_index]);
+                    int offsetSeconds_i = SavOffsets[set_index];
                     if (offsetSeconds_i > sun_big_offset * 3600)
                     {
                         offsetSeconds_i = offsetSeconds_i - sun_negative_sifhter * 3600;
@@ -59,13 +70,11 @@ namespace WinFormsApp3
 
                     DateTimeOffset localTime = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).AddSeconds(offsetSeconds);
                     tmp = localTime.ToString("yyyy-MM-ddTHH:mm:ss+" + offset_st).Replace("+-", "-");
-                    tmp = tmp + $"\r\nindex:0\r\ntradition:null\r\noffset0:{SavOffsets[0]}";
+                    tmp = tmp + $"\r\nindex:0\r\ntradition:null\r\noffset0:{SavOffsets[set_index]}";
 
                     label1.Text = tmp;
                     return;
                 }
-
-
 
                 // バイナリーサーチを実行
                 long max = SavTrans[svlen - 1];
@@ -88,7 +97,7 @@ namespace WinFormsApp3
                     index = -1;
                 }
 
-                if (index >= 0 && index < SavOffsets.Length)
+                if (index >= -1 && index < SavOffsets.Length)
                 {
                     double offsetSeconds = Convert.ToDouble(SavOffsets[index + 1]);
                     int offsetSeconds_i = SavOffsets[index + 1];
@@ -102,18 +111,16 @@ namespace WinFormsApp3
                     DateTimeOffset localTime = DateTimeOffset.FromUnixTimeSeconds(unixTimestamp).AddSeconds(offsetSeconds);
                     tmp = localTime.ToString("yyyy-MM-ddTHH:mm:ss+" + offset_st).Replace("+-","-");
                 }
-                else
-                {
-                    tmp = "not found";
-                    label1.Text = tmp;
-                    return;
-                }
-                var trans = SavTrans[index];
-                var tt = "";
+
+                const long MinSeconds = -62135596800L;
+                const long MaxSeconds = 253402300799L;
+                long trans=0;
+                if (index >= 0) { trans = SavTrans[index]; }
+                else { trans = MinSeconds; }
+
+                    var tt = "";
                 if (ch)
                 {
-                    const long MinSeconds = -62135596800L;
-                    const long MaxSeconds = 253402300799L;
                     if (trans >= MinSeconds && trans <= MaxSeconds)
                     {
 
@@ -126,14 +133,7 @@ namespace WinFormsApp3
                     }
                 }
                 double offsetSeconds_ii = SavOffsets[index + 1];
-                if (sun)
-                {
-                    if (offsetSeconds_ii > sun_big_offset * 3600)
-                    {
-                        offsetSeconds_ii = offsetSeconds_ii - sun_negative_sifhter * 3600;
-                    }
-                    offsetSeconds_ii = offsetSeconds_ii / 3600;
-                }
+                offsetSeconds_ii = offsetSeconds_ii / 3600;
 
 
 
@@ -400,14 +400,9 @@ namespace WinFormsApp3
 
             public static int ReadOffset(byte[] bs, ref int pointer)
             {
-                int offsetByte = bs[pointer]; // readByte
+                byte offsetByte = bs[pointer]; // readByte
                 pointer++;
-                int pp = Convert.ToInt32(pointer);
-                string log2 = pp.ToString("X8");
-                string logw = offsetByte.ToString("X");
 
-                string ab = log2 + logw;
-                string aab = log2 + logw;
 
                 if (offsetByte == 127)
                 {
@@ -419,9 +414,12 @@ namespace WinFormsApp3
                 }
                 else
                 {
-                    return offsetByte * 900;
+                    return (sbyte)offsetByte * 900;
                 }
             }
+
+            const long sun_epoc_shifter = 4575744000L;//- 1824年12月27日　+ 2115/01/01 09:00 152年　52960日　
+
 
             public static long ReadEpochSec(byte[] bs, ref int pointer)
             {
@@ -437,7 +435,7 @@ namespace WinFormsApp3
                     int midByte = bs[pointer++] & 255;
                     int loByte = bs[pointer++] & 255;
                     long tot = ((long)hiByte << 16) + (midByte << 8) + loByte;
-                    return (tot * 900) - 4575744000L;
+                    return (tot * 900) - sun_epoc_shifter;
                 }
             }
 
@@ -533,7 +531,6 @@ namespace WinFormsApp3
                 return;
             }
             bool ch = div3600.Checked;
-            bool sun = sunfix.Checked;
 
             var zoneInfo = ZoneInfoReader.GetZoneInfo(bs, ref pointer, tzst);
             StringBuilder sb = new StringBuilder();
@@ -567,10 +564,6 @@ namespace WinFormsApp3
             foreach (var offset in zoneInfo.StdOffsets)
             {
                 double offset_d = offset;
-                if (sun & offset_d > sun_big_offset * 3600)
-                {
-                    offset_d = offset_d - sun_negative_sifhter * 3600;
-                }
                 if (ch)
                 {
                     offset_d = offset_d / 3600;
@@ -613,10 +606,6 @@ namespace WinFormsApp3
             {
 
                 double offset_d = offset;
-                if (sun & offset_d > sun_big_offset * 3600)
-                {
-                    offset_d = offset_d - sun_negative_sifhter * 3600;
-                }
                 if (ch)
                 {
                     offset_d = offset_d / 3600;

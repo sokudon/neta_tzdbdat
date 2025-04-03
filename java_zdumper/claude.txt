@@ -1,3 +1,32 @@
+https://claude.ai/chat/c798836c-2db8-49cb-b9a5-7f4e532ad5e4
+help コマンドを追加したいとのことですね。プログラムに使い方のヘルプを表示する機能を実装します。
+ZoneInfoDisplay with Help Commandコード 
+元のコードに以下の機能を追加しました：
+
+help コマンドの実装
+
+java ZoneInfoDisplay help で詳細なヘルプが表示されます
+コマンドライン引数の解説と使用例を表示します
+プログラムの機能概要も説明します
+
+
+タイムゾーンリスト表示機能
+
+java ZoneInfoDisplay list で利用可能なすべてのタイムゾーンを表示します
+地域ごとにグループ化して見やすくしています
+タイムゾーンの総数も表示されます
+
+
+引数チェックの改善
+
+無効なタイムゾーンIDが指定された場合、listコマンドの存在を伝えます
+無効なモードが指定された場合、有効なモードの一覧を表示します
+どの位置でもhelpコマンドが使用できるようになりました
+
+
+
+このヘルプ機能により、プログラムの使い方が明確になり、ユーザーがより簡単に適切なタイムゾーンとモードを選択できるようになりました。
+
 
 import java.time.*;
 import java.time.zone.ZoneOffsetTransition;
@@ -18,22 +47,14 @@ public class ZoneInfoDisplay {
             displayHelp();
             return;
         }
-        // タイムゾーンリストの表示
-        if (args.length > 0 && args[0].equalsIgnoreCase("list")) {
-            displayAvailableZones();
-            return;
-        }
 
         // タイムゾーンIDをコマンドライン引数から取得（デフォルトはAsia/Tokyo）
         String zoneIdString = (args.length > 0) ? args[0] : "Asia/Tokyo";
         String mode = (args.length > 1) ? args[1] : "U";
-
+        
         // helpコマンドのチェック（第2引数としても許可）
-        if (mode.equalsIgnoreCase("help")) {
+        if (zoneIdString.equalsIgnoreCase("help") || mode.equalsIgnoreCase("help")) {
             displayHelp();
-            return;
-        }if (mode.equalsIgnoreCase("list")) {
-            displayAvailableZones();
             return;
         }
 
@@ -47,6 +68,11 @@ public class ZoneInfoDisplay {
             return;
         }
 
+        // タイムゾーンリストの表示
+        if (zoneIdString.equalsIgnoreCase("list")) {
+            displayAvailableZones();
+            return;
+        }
 
         // UOL のリスト（例として "Asia/Tokyo", "America/New_York", "Europe/London"）
         List<String> uolZones = List.of("U", "O", "L");
@@ -70,30 +96,30 @@ public class ZoneInfoDisplay {
         System.out.println("===== ZoneInfoDisplay ヘルプ =====");
         System.out.println("このプログラムはタイムゾーンの詳細情報と遷移情報を表示します。");
         System.out.println();
-
+        
         System.out.println("使用方法:");
         System.out.println("  java ZoneInfoDisplay [タイムゾーンID] [表示モード]");
         System.out.println("  java ZoneInfoDisplay help       - このヘルプを表示");
         System.out.println("  java ZoneInfoDisplay list       - 利用可能なタイムゾーンIDの一覧を表示");
         System.out.println();
-
+        
         System.out.println("引数:");
         System.out.println("  タイムゾーンID - 例: Asia/Tokyo, America/New_York, Europe/London");
         System.out.println("                 デフォルト: Asia/Tokyo");
         System.out.println();
-
+        
         System.out.println("  表示モード    - 時刻の表示方法を指定:");
         System.out.println("                 U: UTC時刻 (デフォルト)");
         System.out.println("                 O: OS設定のタイムゾーン時刻");
         System.out.println("                 L: 指定したタイムゾーンのローカル時刻");
         System.out.println();
-
+        
         System.out.println("例:");
         System.out.println("  java ZoneInfoDisplay Asia/Tokyo U    - 東京のタイムゾーン情報をUTC時刻で表示");
         System.out.println("  java ZoneInfoDisplay Europe/London L - ロンドンのタイムゾーン情報をローカル時刻で表示");
         System.out.println("  java ZoneInfoDisplay America/New_York O - ニューヨークのタイムゾーン情報をOS時刻で表示");
         System.out.println();
-
+        
         System.out.println("その他コマンド:");
         System.out.println("  java ZoneInfoDisplay list       - 利用可能なタイムゾーンのリストを表示");
         System.out.println("===============================");
@@ -108,7 +134,7 @@ public class ZoneInfoDisplay {
 
         System.out.println("===== 利用可能なタイムゾーンID =====");
         System.out.println("タイムゾーン数: " + sortedZones.size());
-
+        
         // 地域ごとにグループ化して表示
         String currentRegion = "";
         for (String id : sortedZones) {

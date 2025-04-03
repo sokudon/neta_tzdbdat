@@ -61,31 +61,20 @@
     入力時刻が遷移範囲外の場合、`get_rule_offset` でルールベースのオフセットを計算。
 4.  **UI への反映**: 解析結果を `textBox1`（全体情報）、`textBox2`（エイリアス）、`textBox3`（ゾーン詳細）に表示。
 
-機能詳細
-タイムゾーン解析
-リージョン一覧: regionArray にタイムゾーンIDを格納。
-エイリアス処理: ShortIds 辞書で短縮名（例: "JST" → "Asia/Tokyo"）を解決。
-遷移計算: SavTrans と SavOffsets を用いて、指定時刻のオフセットをバイナリサーチで特定。
-時刻表示オプション
-div3600.Checked が true の場合、オフセットを時間単位で表示（例: "9" ではなく "09:00"）。
-遷移時刻を UTC 形式（例: "2025-04-03 05:30:00Z"）で表示可能。
-POSIX 形式の擬似生成
-fake_posix メソッドで、夏時間ルールを簡易的な POSIX 形式（例: "JST-9JDT-10,M3.2.0/2,M11.1.0/2"）に変換。
-完全な POSIX ではないため、あくまで参考用。
-注意点
-ファイルの配置: tzdb.dat が実行ディレクトリにない場合、FileNotFoundException が発生。
-互換性: Java の tzdb.dat を前提としているため、異なる形式のファイルでは動作しない。
-エラー処理: 範囲外の時刻や不正なデータに対しては、例外メッセージを返す。
-ドキュメント不足: neta の具体的なカスタマイズ内容は不明。リポジトリのソースコードや作者への問い合わせが必要。
-更新方法
-IANA データベースの反映: IANA の最新 tzdata を基に tzdb.dat を再生成するには、Java の tzupdater ツールを使用。
-Bash
-
-java -jar tzupdater.jar -l [https://www.iana.org/time-zones/repository/tzdata-latest.tar.gz](https://www.iana.org/time-zones/repository/tzdata-latest.tar.gz)
-カスタムデータ: neta 固有の変更がある場合、生成スクリプトの解析が必要。
-開発者向け情報
-リポジトリ: https://github.com/sokudon/neta_tzdbdat/tree/master/WinFormsApp3
-依存関係: System.Buffers.Binary, System.Text などを利用。
-拡張性: ZoneInfoReader クラスをカスタマイズすることで、独自のデータ形式に対応可能。
-問い合わせ
-不明点は、リポジトリの Issues ページ (https://github.com/sokudon/neta_tzdbdat/issues) または作者に直接連絡してください。
+ #機能詳細
+ *タイムゾーン解析
+ *リージョン一覧: regionArray にタイムゾーンIDを格納。
+ *エイリアス処理: ShortIds 辞書で短縮名（例: "JST" → "Asia/Tokyo"）を解決。
+ *遷移計算: SavTrans と SavOffsets を用いて、指定時刻のオフセットをバイナリサーチで特定。
+ *時刻表示オプション
+ *div3600.Checked が true の場合、オフセットを時間単位で表示（例: "9" ではなく "09:00"）。
+ *遷移時刻を UTC 形式（例: "2025-04-03 05:30:00Z"）で表示可能。
+ *POSIX 形式の擬似生成
+ *fake_posix メソッドで、夏時間ルールを簡易的な POSIX 形式（例: "STD8DST7,M3.2.0/2,M11.1.0/2"）に変換。
+ *完全な POSIX ではないため、あくまで参考用。
+#注意点
+ *ファイルの配置: tzdb.dat が実行ディレクトリにない場合、FileNotFoundException が発生。
+ *互換性: Java の tzdb.dat を前提としているため、異なる形式のファイルでは動作しない。
+ *エラー処理: 範囲外の時刻や不正なデータに対しては、例外メッセージを返す。
+ *ドキュメント不足: neta の具体的なカスタマイズ内容は不明。リポジトリのソースコードや作者への問い合わせが必要。
+ 

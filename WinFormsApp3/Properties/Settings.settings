@@ -1,0 +1,12 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="WinFormsApp3.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="testdt" Type="System.String" Scope="User">
+      <Value Profile="(Default)">2025/03/09</Value>
+    </Setting>
+    <Setting Name="tzst" Type="System.String" Scope="User">
+      <Value Profile="(Default)">America/New_York</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

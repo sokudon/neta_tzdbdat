@@ -38,6 +38,9 @@
             test_datetime = new TextBox();
             datetest = new Label();
             ap_rules = new CheckBox();
+            comboBox1 = new ComboBox();
+            label1 = new Label();
+            textBox4 = new TextBox();
             SuspendLayout();
             // 
             // button1
@@ -140,11 +143,44 @@
             ap_rules.Text = "apply rules";
             ap_rules.UseVisualStyleBackColor = true;
             // 
+            // comboBox1
+            // 
+            comboBox1.DisplayMember = "2";
+            comboBox1.DropDownStyle = ComboBoxStyle.DropDownList;
+            comboBox1.FormattingEnabled = true;
+            comboBox1.ImeMode = ImeMode.Disable;
+            comboBox1.Items.AddRange(new object[] { "2", "6", "10", "20", "30", "40", "50" });
+            comboBox1.Location = new Point(516, 385);
+            comboBox1.Name = "comboBox1";
+            comboBox1.Size = new Size(45, 28);
+            comboBox1.TabIndex = 12;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(468, 388);
+            label1.Name = "label1";
+            label1.Size = new Size(42, 20);
+            label1.TabIndex = 13;
+            label1.Text = "y_len";
+            // 
+            // textBox4
+            // 
+            textBox4.Location = new Point(765, 27);
+            textBox4.Multiline = true;
+            textBox4.Name = "textBox4";
+            textBox4.ScrollBars = ScrollBars.Vertical;
+            textBox4.Size = new Size(125, 328);
+            textBox4.TabIndex = 14;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(778, 450);
+            ClientSize = new Size(910, 450);
+            Controls.Add(textBox4);
+            Controls.Add(label1);
+            Controls.Add(comboBox1);
             Controls.Add(ap_rules);
             Controls.Add(datetest);
             Controls.Add(test_datetime);
@@ -174,5 +210,8 @@
         private TextBox test_datetime;
         private Label datetest;
         private CheckBox ap_rules;
+        private ComboBox comboBox1;
+        private Label label1;
+        private TextBox textBox4;
     }
 }

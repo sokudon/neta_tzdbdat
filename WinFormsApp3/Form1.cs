@@ -3,6 +3,7 @@ using System.Data;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static WinFormsApp3.Form1.ZoneInfoReader;
 
@@ -81,7 +82,7 @@ namespace WinFormsApp3
                 if (unixTimestamp > max)
                 {
                     index = svlen - 1;
-                    if (ap_rules.Checked && rules_length>1)
+                    if (ap_rules.Checked && rules_length > 1)
                     {
                         return "MAX";
                     }
@@ -571,22 +572,36 @@ namespace WinFormsApp3
 
             sb.AppendLine();
             sb.AppendLine("ZoneInfoRules: ");
+
+            string[] td_name= { "UTC", "Wall", "Standard" };
+            string td_tmo = "UTC";
+            string days = "Sun";
+            int td_idx = 0;
             foreach (var rr in zoneInfo.Rules)
             {
                 if (ch)
                 {
                     var tradision_moment = (rr.SecondOfDay / 3600).ToString("D2") + ":" + ((rr.SecondOfDay % 3600) / 60).ToString("D2");
-                    string offset_d = ("-" + tohhmm(rr.StandardOffset, 0)).Replace("--", "");
-                    string offset_b = ("-" + tohhmm(rr.OffsetBefore, 0)).Replace("--", "");
-                    string offset_a = ("-" + tohhmm(rr.OffsetAfter, 0)).Replace("--", "");
-                    sb.AppendLine($"Month{rr.Month},DayOfMonth:{rr.DayOfMonth},DayOfWeek:{rr.DayOfWeek}" +
-                    $", SecondOfDay:{tradision_moment},TimeDefinition: {rr.TimeDefinition}," +
-                    $"StandardOffset: {offset_d},OffsetBefore: {offset_b},OffsetAfter: {offset_a}");
+                    string offset_d = ("+" + tohhmm(rr.StandardOffset, 0)).Replace("+-", "-");
+                    string offset_b = ("+" + tohhmm(rr.OffsetBefore, 0)).Replace("+-", "-");
+                    string offset_a = ("+" + tohhmm(rr.OffsetAfter, 0)).Replace("+-", "-");
+
+                    td_idx = rr.TimeDefinition;
+                    td_tmo = td_name[td_idx];
+                    DayOfWeek day = (DayOfWeek)(int)(rr.DayOfWeek%7);
+                    string dayName = day.ToString(); // "Wednesday"
+
+
+                    sb.AppendLine($"{offset_b}=>{offset_a}, {dayName} on or after {rr.Month}/{rr.DayOfMonth} " +
+                    $"at {tradision_moment} {td_tmo}," +
+                    $"StandardOffset: {offset_d}");
                 }
                 else
                 {
+                    td_idx = rr.TimeDefinition;
+                    td_tmo = td_name[td_idx];
                     sb.AppendLine($"Month{rr.Month},DayOfMonth:{rr.DayOfMonth},DayOfWeek:{rr.DayOfWeek}" +
-                    $", SecondOfDay:{rr.SecondOfDay},TimeDefinition: {rr.TimeDefinition}," +
+                    $", SecondOfDay:{rr.SecondOfDay},TimeDefinition: {td_idx}({td_tmo}),\"" +
                     $"StandardOffset: {rr.StandardOffset},OffsetBefore: {rr.OffsetBefore},OffsetAfter: {rr.OffsetAfter}");
                 }
             }
@@ -610,10 +625,10 @@ namespace WinFormsApp3
                 Regex regex = new Regex(@"(;(.*?),|;$)");
                 fake_posixs = regex.Replace(fake_posixs, ",");
 
-                textBox4.Text += $",{fake_posixs},";
+                fk = $",{fake_posixs},";
 
                 regex = new Regex(@"(,$)");
-                fake_posixs = "\r\n#java has no regular posix,has binary posix\r\nthis fake_posixs:" + regex.Replace(fake_posixs, "");
+                fake_posixs = "\r\n#java has no regular posix,has binary simpleformat rules..\r\nthis fake_posixs:" + regex.Replace(fake_posixs, "");
                 sb.AppendLine(fake_posixs);
             }
 
@@ -648,22 +663,23 @@ namespace WinFormsApp3
             long milliseconds = new DateTimeOffset(date).ToUnixTimeMilliseconds();
             //java.timeではなく旧javaapiのsun.util.calendar.ZoneInfoを使用しているので使わない
             //longにねじ込むため　trandi*1000<<12で制度落ちしているので使うのが（）
-            int result = GetOffsets(milliseconds, zz.Offsets, 0, zz.Transitions, zz.Offsets,zz.Rules);
+            //int result = GetOffsets(milliseconds, zz.Offsets, 0, zz.Transitions, zz.Offsets, zz.Rules);
             data = get_rule_offset(zz);
 
             time_date.Text = data;
         }
 
+        string fk = "";
 
         private string get_rule_offset(ZoneInfos tz)
         {
             int make_year_len = 2;//
-            if (comboBox1.SelectedIndex>0)
+            if (comboBox1.SelectedIndex > 0)
             {
                 make_year_len = Convert.ToInt32(comboBox1.Text);
             }
-            long[] SavTrans= new long[tz.Rules.Length* make_year_len + 1];
-            int[] SavOffsets = new int[tz.Rules.Length* make_year_len + 1];
+            long[] SavTrans = new long[tz.Rules.Length * make_year_len + 1];
+            int[] SavOffsets = new int[tz.Rules.Length * make_year_len + 1];
             try
             {
                 DateTime date;
@@ -689,56 +705,91 @@ namespace WinFormsApp3
                 const long MinSeconds = -62135596800L;
                 const long MaxSeconds = 253402300799L;
 
-                SavTrans[SavTrans.Length-1] = MaxSeconds;
+                SavTrans[SavTrans.Length - 1] = MaxSeconds;
                 SavOffsets[0] = tz.Rules[0].StandardOffset;
 
                 textBox3.Text += $"\r\nrecent year transition\r\n";
 
                 string zz = tz.ZoneId;
-                textBox4.Text += $"zone:{zz},";
 
-                for (int year = thisyear - make_year_len/2; year <= thisyear+ make_year_len / 2-1; year++)
+                ///** The local date-time is expressed in terms of the UTC offset. */
+                //UTC,
+                ///** The local date-time is expressed in terms of the wall offset. */
+                //WALL,
+                ///** The local date-time is expressed in terms of the standard offset. */
+                //STANDARD;
+
+                textBox3.Text += $"UTC,WALL\r\n";
+                for (int year = thisyear - make_year_len / 2; year <= thisyear + make_year_len / 2 - 1; year++)
                 {
                     foreach (var rr in tz.Rules)
                     {
-                        DateTimeOffset dt = new DateTime(year, (int)rr.Month, (int)rr.DayOfMonth, rr.SecondOfDay / 3600, 0, 0, DateTimeKind.Utc);
-                        DayOfWeek todayDowEnum = dt.DayOfWeek;
+                        // Convert SecondOfDay (in seconds) to a TimeSpan
+                        TimeSpan timeOfDay = TimeSpan.FromSeconds(rr.SecondOfDay);
+
+                        // Extract hours, minutes, and seconds
+                        int hours = timeOfDay.Hours;
+                        int minutes = timeOfDay.Minutes;
+                        int seconds = timeOfDay.Seconds;
+
+                        // Start with local standard time
+                        DateTime dtLocal = new DateTime(year, (int)rr.Month, (int)rr.DayOfMonth, hours, minutes, seconds);
+                        DayOfWeek todayDowEnum = dtLocal.DayOfWeek;
                         int todayDowNumber = (int)todayDowEnum;
                         int dow = rr.DayOfWeek % 7;
                         int diff = (-todayDowNumber + dow) % 7;
+                        if (diff < 0) { diff += 7; }
+                        dtLocal = dtLocal.AddDays(diff);
 
-                        if (diff < 0) { diff = diff + 7; }
 
-                        dt = dt.AddDays(diff);
-                        if(dt.Month> (int)rr.Month)
+
+                        // Adjust based on TimeDefinition
+                        long transitionEpochSec;
+                        if (rr.TimeDefinition == 0) // UTC
                         {
-                            dt = dt.AddDays(-7);
-                        }
-                        if (dt.Month < (int)rr.Month)
+                            transitionEpochSec = new DateTimeOffset(dtLocal, TimeSpan.Zero).ToUnixTimeSeconds();
+                        }                       
+                        else  // Wall 1
                         {
-                            dt = dt.AddDays(7);
+                            int offset = rr.offsetBefore;
+                            if (rr.TimeDefinition == 2) // Standard (2)
+                            {
+                                if (rr.offsetAfter < rr.offsetBefore)
+                                {
+                                    offset += -rr.OffsetBefore + rr.standardOffset;
+                                }
+                            }
+
+                            TimeSpan offsetbf = TimeSpan.FromSeconds(offset);
+
+                            transitionEpochSec = new DateTimeOffset(dtLocal, offsetbf).ToUnixTimeSeconds();
                         }
 
-                        int type = rr.TimeDefinition;
-                        int offset = 0;
-                        if (type==2) { offset = rr.OffsetBefore; }
-                        if (type == 1 ) { offset = rr.standardOffset; }
+                        //ローカル.,utc 標準に変換
+                        DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds (transitionEpochSec).ToOffset(TimeSpan.FromSeconds(Convert.ToDouble(rr.OffsetAfter)));
+                        if (dateTimeOffset.Month > (int)rr.Month) { 
+                            transitionEpochSec -= 3600*24*7;
+                        }
+                        if (dateTimeOffset.Month < (int)rr.Month) { 
+                            transitionEpochSec += 3600 * 24 * 7; 
+                        }
 
-                        SavTrans[i] = (dt).ToUnixTimeSeconds() - offset;
+                        SavTrans[i] = transitionEpochSec;
                         SavOffsets[i + 1] = rr.OffsetAfter;
-                        DateTimeOffset dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(SavTrans[i]);
+                        dateTimeOffset = DateTimeOffset.FromUnixTimeSeconds(transitionEpochSec);
                         DateTime utcDateTime = dateTimeOffset.UtcDateTime;
                         string ut = (utcDateTime.ToString("u")); // "u" フォーマットは UTC 時刻を表示
-                        string wall = dateTimeOffset.ToOffset(TimeSpan.FromSeconds(Convert.ToDouble(rr.OffsetAfter))).ToString();
+                        string wall = dateTimeOffset.ToOffset(TimeSpan.FromSeconds(Convert.ToDouble(rr.OffsetAfter))).ToString("yyyy-MM-ddTHH:mm:sszzz");
 
-                        textBox3.Text += $"dt{dt.ToString()}UTC:{ut},WALL{wall}offset:{(double)SavOffsets[i + 1] / 3600} \r\n";
-                        if (i == 3 )
-                        {
-                            textBox4.Text += $"dt{dt.ToString()},UTC:{ut},WALL{wall},offset:{(double)SavOffsets[i + 1] / 3600}\r\n";
-                        }
+                        textBox3.Text += $"{ut.Replace(" ", "T")},{wall}\r\n";
+                        //if (i == 2 || i==3)
+                        //{
+                        //  textBox4.Text += $"{zz},{fk},{rr.TimeDefinition},{ut.Replace(" ","T")},{wall},{(double)SavOffsets[i + 1] / 3600}\r\n";
+                        //}
                         i++;
                     }
                 }
+
 
                 Array.Sort(SavTrans, SavOffsets);
                 Array.Resize(ref SavTrans, i);
@@ -830,64 +881,78 @@ namespace WinFormsApp3
         private string fake_posix(ZoneOffsetTransitionRule rr)
         {
             int diff = rr.OffsetAfter - rr.OffsetBefore;
-            if (diff < 0)
-            {
-                diff = -diff;
-            }
-            string std = tohhmm(rr.StandardOffset, 0);
-            string dst = tohhmm(rr.StandardOffset, diff);
+            if (diff < 0) { diff = -diff; }
+            string std = tohhmm(rr.StandardOffset, 0); // e.g., "12:45"
+            string dst = tohhmm(rr.StandardOffset, diff); // e.g., "13:45"
 
-            int type = rr.TimeDefinition;
+
+            // Convert SecondOfDay (in seconds) to a TimeSpan
+            TimeSpan timeOfDay = TimeSpan.FromSeconds(rr.SecondOfDay);
+
+            // Extract hours, minutes, and seconds
+            int hours = timeOfDay.Hours;
+            int minutes = timeOfDay.Minutes;
+            int seconds = timeOfDay.Seconds;
+
+            int thisyear = DateTime.Now.Year;
+            // Start with local standard time
+            DateTime dtLocal = new DateTime(thisyear, (int)rr.Month, (int)rr.DayOfMonth, hours, minutes, seconds);
+            DayOfWeek todayDowEnum = dtLocal.DayOfWeek;
+            int todayDowNumber = (int)todayDowEnum;
+            int dow = rr.DayOfWeek % 7;
+            int diffs = (-todayDowNumber + dow) % 7;
+            if (diffs < 0) { diff += 7; }
+            dtLocal = dtLocal.AddDays(diff);
+            if (dtLocal.Month > (int)rr.Month) { dtLocal = dtLocal.AddDays(-7); }
+            if (dtLocal.Month < (int)rr.Month) { dtLocal = dtLocal.AddDays(7); }
+
             int offset = rr.SecondOfDay;
-            if (type == 0)
+            if (rr.TimeDefinition == 0) // UTC only
             {
                 offset += rr.OffsetBefore;
-
             }
-            if (type == 1)
+            if (rr.TimeDefinition == 2) // std only
             {
-                if (rr.OffsetAfter-rr.OffsetBefore < 0)
-                {
-                    offset +=  rr.OffsetBefore-rr.offsetAfter;
-                }
+                offset += rr.OffsetBefore - rr.StandardOffset;
             }
-            TimeSpan ts= TimeSpan.FromSeconds(offset);
-            string tt= ts.ToString(@"h\:mm").Replace(":00","");
+
+
+            // Remove Wall time adjustment for DST end, POSIX uses standard time
+            TimeSpan ts = TimeSpan.FromSeconds(offset);
+            string tt = ts.ToString(@"h\:mm").Replace(":00", "");
 
             string fake_posix = "STD{std}DST{dst},M{sm}.{sd}.{sw}/{sh}";
             fake_posix = fake_posix.Replace("{std}", "-" + std);
             fake_posix = fake_posix.Replace("{dst}", "-" + dst);
             fake_posix = fake_posix.Replace("{sm}", rr.Month.ToString());
-            if (rr.DayOfMonth >= 23) { fake_posix = fake_posix.Replace("{sd}", "5"); }
-            else
-            {
-                fake_posix = fake_posix.Replace("{sd}", (rr.DayOfMonth / 7 + 1).ToString());
-            }
+            if (rr.DayOfMonth >= 23) { fake_posix = fake_posix.Replace("{sd}", "5"); } // Last week
+            else { fake_posix = fake_posix.Replace("{sd}", (rr.DayOfMonth / 7 + 1).ToString()); } // Week number
             fake_posix = fake_posix.Replace("{sw}", (rr.DayOfWeek % 7).ToString());
-            fake_posix = fake_posix.Replace("{sh}", (tt).ToString());
-            fake_posix = fake_posix.Replace("--", "").Replace("--", "");
-            if (std.Contains(":") || dst.Contains(":")) {
-
+            fake_posix = fake_posix.Replace("{sh}", tt);
+            fake_posix = fake_posix.Replace("--", "");
+            if (std.Contains(":") || dst.Contains(":"))
+            {
                 fake_posix = fake_posix.Replace("STD", "<+" + std + ">").Replace("DST", "<+" + dst + ">");
             }
-
             fake_posix = fake_posix.Replace("+-", "+").Replace("+-", "-");
             return fake_posix;
         }
 
         private string tohhmm(int dd, int timeDefinition)
         {
-            dd= dd+ timeDefinition;
+            dd = dd + timeDefinition;
             string sigh = "";
-            if (dd < 0) {
+            if (dd < 0)
+            {
                 sigh = "-";
             }
-            sigh = sigh + Math.Abs((dd)/3600).ToString("");
-            if (dd % 3600 >0) { 
-            sigh += ":" + Math.Abs((dd % 3600)/60).ToString("D2"); 
-                 }
+            sigh = sigh + Math.Abs((dd) / 3600).ToString("");
+            if (dd % 3600 > 0)
+            {
+                sigh += ":" + Math.Abs((dd % 3600) / 60).ToString("D2");
+            }
             return sigh;
-         }
+        }
 
 
 
@@ -1185,9 +1250,7 @@ namespace WinFormsApp3
             // Example mapping arrays/constants (Adjust values based on Java's Calendar/SimpleTimeZone)
             private static readonly int[] toCalendarDOW = new int[] { -1, 1, 2, 3, 4, 5, 6, 7 }; // Map 1-7 (Mon-Sun) to Java Calendar values (e.g., Calendar.MONDAY=2) - NEEDS VERIFICATION
             private static readonly double[] toSTZTime = new double[] { 0, 1, 2 }; // Map TimeDefinition (0=UTC, 1=WALL, 2=STANDARD) to SimpleTimeZone values - NEEDS VERIFICATION
-                                                                             // Define SimpleTimeZone constants if needed, e.g.:
-            private const int WALL_TIME = 1; // Example value
-                                             // ... other constants ...
+                                                           
 
 
             // --- Ported GetZoneInfo Method ---
@@ -1658,7 +1721,7 @@ namespace WinFormsApp3
         private void Form1_Load(object sender, EventArgs e)
         {
 
-            tzdb_names.Text=Properties.Settings.Default.tzst;
+            tzdb_names.Text = Properties.Settings.Default.tzst;
             test_datetime.Text = Properties.Settings.Default.testdt;
         }
     }

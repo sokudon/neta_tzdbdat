@@ -96,11 +96,11 @@
             div3600.AutoSize = true;
             div3600.Checked = true;
             div3600.CheckState = CheckState.Checked;
-            div3600.Location = new Point(359, 414);
+            div3600.Location = new Point(342, 419);
             div3600.Name = "div3600";
-            div3600.Size = new Size(202, 24);
+            div3600.Size = new Size(225, 24);
             div3600.TabIndex = 6;
-            div3600.Text = "offset:time/3600,date:UTC";
+            div3600.Text = "offset:t/3600,dt:UTC,raw_rules";
             div3600.UseVisualStyleBackColor = true;
             div3600.CheckedChanged += button1_Click;
             // 
@@ -136,7 +136,7 @@
             ap_rules.AutoSize = true;
             ap_rules.Checked = true;
             ap_rules.CheckState = CheckState.Checked;
-            ap_rules.Location = new Point(359, 385);
+            ap_rules.Location = new Point(342, 385);
             ap_rules.Name = "ap_rules";
             ap_rules.Size = new Size(103, 24);
             ap_rules.TabIndex = 11;
@@ -150,7 +150,7 @@
             comboBox1.FormattingEnabled = true;
             comboBox1.ImeMode = ImeMode.Disable;
             comboBox1.Items.AddRange(new object[] { "2", "6", "10", "20", "30", "40", "50" });
-            comboBox1.Location = new Point(516, 385);
+            comboBox1.Location = new Point(520, 385);
             comboBox1.Name = "comboBox1";
             comboBox1.Size = new Size(45, 28);
             comboBox1.TabIndex = 12;
@@ -158,7 +158,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(468, 388);
+            label1.Location = new Point(472, 388);
             label1.Name = "label1";
             label1.Size = new Size(42, 20);
             label1.TabIndex = 13;
@@ -172,12 +172,13 @@
             textBox4.ScrollBars = ScrollBars.Vertical;
             textBox4.Size = new Size(125, 328);
             textBox4.TabIndex = 14;
+            textBox4.Visible = false;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(910, 450);
+            ClientSize = new Size(760, 450);
             Controls.Add(textBox4);
             Controls.Add(label1);
             Controls.Add(comboBox1);

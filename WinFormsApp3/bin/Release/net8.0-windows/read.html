@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>java_tzdb.dat_neta 機能ドキュメント</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }
+        h1 { color: #2c3e50; }
+        h2 { color: #34495e; }
+        h3 { color: #7f8c8d; }
+        ul { margin-left: 20px; }
+        code { background-color: #ecf0f1; padding: 2px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>java_tzdb.dat_neta 機能ドキュメント</h1>
+
+    <h2>概要</h2>
+    <p><code>java_tzdb.dat_neta</code> は、Windows Forms を使用したアプリケーションで、IANA タイムゾーンデータベース (<code>tzdb.dat</code>) を解析し、指定されたタイムゾーンにおけるローカル時刻やオフセット情報を表示するツールです。ユーザーはタイムゾーンを選択し、特定の日時に対する時刻変換や、タイムゾーンの遷移ルールを確認できます。</p>
+
+    <h2>主な機能</h2>
+
+    <h3>1. タイムゾーンデータの読み込みと解析</h3>
+    <ul>
+        <li><strong>対象ファイル</strong>: <code>tzdb.dat</code></li>
+        <li><strong>動作</strong>:
+            <ul>
+                <li>アプリケーション起動時に <code>tzdb.dat</code> を読み込み、タイムゾーン、地域、エイリアス、ルールなどの情報を抽出。</li>
+                <li>バイナリデータを解析し、<code>regionArray</code>（地域リスト）、<code>ruleArray</code>（ルールデータ）、<code>aliases</code>（エイリアス辞書）などに格納。</li>
+            </ul>
+        </li>
+        <li><strong>表示</strong>: 解析結果を <code>textBox1</code>（地域情報）と <code>textBox2</code>（エイリアス情報）に表示。</li>
+    </ul>
+
+    <h3>2. タイムゾーン情報の表示</h3>
+    <ul>
+        <li><strong>入力</strong>: ユーザーが <code>tzdb_names</code> テキストボックスにタイムゾーン名（例: <code>America/Los_Angeles</code>）を入力。</li>
+        <li><strong>動作</strong>:
+            <ul>
+                <li>指定されたタイムゾーンの標準オフセット（<code>StdOffsets</code>）、夏時間遷移（<code>SavTrans</code>/<code>SavOffsets</code>）、およびルール（<code>Rules</code>）を取得。</li>
+                <li>オフセットや遷移時刻を人間が読める形式（UTC または時:分）に変換して表示。</li>
+            </ul>
+        </li>
+        <li><strong>表示</strong>: <code>textBox3</code> に詳細なタイムゾーン情報（遷移時刻、オフセット、ルールなど）を出力。</li>
+    </ul>
+
+    <h3>3. 特定日時のローカル時刻計算</h3>
+    <ul>
+        <li><strong>入力</strong>:
+            <ul>
+                <li><code>test_datetime</code> テキストボックスに日時（例: <code>2025-04-09 12:00:00</code>）を入力（未入力の場合は現在時刻を使用）。</li>
+                <li><code>tzdb_names</code> で選択したタイムゾーン。</li>
+            </ul>
+        </li>
+        <li><strong>動作</strong>:
+            <ul>
+                <li>指定日時を Unix タイムスタンプに変換し、タイムゾーンのオフセットを適用。</li>
+                <li>夏時間（DST）の適用状況を考慮し、ローカル時刻を計算。</li>
+            </ul>
+        </li>
+        <li><strong>表示</strong>: <code>time_date</code> テキストボックスに結果（例: <code>2025-04-09T12:00:00-07:00</code>）を表示。</li>
+    </ul>
+
+    <h3>4. 夏時間（DST）ルールの適用</h3>
+    <ul>
+        <li><strong>動作</strong>:
+            <ul>
+                <li><code>ZoneOffsetTransitionRule</code> を使用して、指定タイムゾーンの夏時間ルールを解析。</li>
+                <li>年間ルール（例: 3 月第 2 日曜日に DST 開始）を基に、指定年における遷移時刻を計算。</li>
+            </ul>
+        </li>
+        <li><strong>オプション</strong>: <code>comboBox1</code> で計算対象の年数を選択可能（デフォルトは 2 年間）。</li>
+        <li><strong>表示</strong>: <code>textBox3</code> に最近の遷移情報（UTC と Wall 時刻）を追加表示。</li>
+    </ul>
+
+    <h3>5. POSIX 形式の擬似ルール生成</h3>
+    <ul>
+        <li><strong>動作</strong>:
+            <ul>
+                <li>夏時間ルールから POSIX 形式（例: <code>STD-08:00DST-07:00,M3.2.0/02:00,M11.1.0/02:00</code>）に似た文字列を生成。</li>
+                <li>Java のバイナリルールを POSIX 風に変換した簡易表現として提供。</li>
+            </ul>
+        </li>
+        <li><strong>表示</strong>: <code>textBox3</code> に <code>#java has no regular posix</code> コメントと共に表示。</li>
+    </ul>
+
+    <h3>6. UI と設定の永続化</h3>
+    <ul>
+        <li><strong>UI コンポーネント</strong>:
+            <ul>
+                <li><code>button1</code>: タイムゾーンデータの読み込みと解析を実行。</li>
+                <li><code>button2</code>: 指定タイムゾーンの詳細情報と時刻計算を実行。</li>
+                <li><code>div3600</code> チェックボックス: オフセットを秒単位ではなく時間単位で表示。</li>
+                <li><code>ap_rules</code> チェックボックス: ルール適用時の挙動を制御（詳細不明）。</li>
+            </ul>
+        </li>
+        <li><strong>設定保存</strong>: <code>Properties.Settings</code> を使用して、入力されたタイムゾーン名や日時を保存し、次回起動時に復元。</li>
+    </ul>
+
+    <h2>使用方法</h2>
+
+    <h3>アプリケーション起動</h3>
+    <ul>
+        <li><code>WinFormsApp3.exe</code> を実行。</li>
+        <li>前回の設定（タイムゾーン名、日時）が自動的に読み込まれる。</li>
+    </ul>
+
+    <h3>タイムゾーン選択</h3>
+    <ul>
+        <li><code>tzdb_names</code> にタイムゾーン名（例: <code>PST</code> や <code>America/New_York</code>）を入力。</li>
+        <li>短縮名（例: <code>PST</code>）は <code>ShortIds</code> 辞書で対応する完全名に変換。</li>
+    </ul>
+
+    <h3>データ解析</h3>
+    <ul>
+        <li><code>button1</code> をクリックして <code>tzdb.dat</code> を解析。</li>
+        <li><code>textBox1</code> と <code>textBox2</code> に地域とエイリアス情報が表示される。</li>
+    </ul>
+
+    <h3>時刻計算</h3>
+    <ul>
+        <li><code>test_datetime</code> に日時を入力（オプション）。</li>
+        <li><code>button2</code> をクリックして選択したタイムゾーンの詳細とローカル時刻を表示。</li>
+        <li><code>time_date</code> に計算結果、<code>textBox3</code> に遷移情報が表示される。</li>
+    </ul>
+
+    <h2>注意点</h2>
+    <ul>
+        <li><strong>依存ファイル</strong>: <code>tzdb.dat</code> が同一ディレクトリに存在しない場合、エラーが発生。</li>
+        <li><strong>エラー処理</strong>: 例外が発生した場合、メッセージが表示されるが、詳細なデバッグ情報は限定的。</li>
+        <li><strong>制限</strong>: 一部の機能（例: <code>GetOffsets</code> の完全実装）は未完成または仮実装状態。</li>
+    </ul>
+
+    <h2>技術的詳細</h2>
+    <ul>
+        <li><strong>使用言語</strong>: C#（.NET Framework）</li>
+        <li><strong>主要クラス</strong>:
+            <ul>
+                <li><code>Form1</code>: メイン UI とロジック。</li>
+                <li><code>ZoneInfoReader</code>: タイムゾーンデータのバイナリ解析。</li>
+                <li><code>ZoneInfos</code>: Java の <code>ZoneInfo</code> に似たタイムゾーン情報管理。</li>
+            </ul>
+        </li>
+        <li><strong>依存ライブラリ</strong>: <code>System.Buffers.Binary</code>, <code>System.Text.RegularExpressions</code> など。</li>
+    </ul>
+</body>
+</html>

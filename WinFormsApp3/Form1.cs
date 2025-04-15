@@ -754,10 +754,7 @@ namespace WinFormsApp3
                             int offset = rr.offsetBefore;
                             if (rr.TimeDefinition == 2) // Standard (2)
                             {
-                                if (rr.offsetAfter < rr.offsetBefore)
-                                {
-                                    offset += -rr.OffsetBefore + rr.standardOffset;
-                                }
+                                    offset = rr.standardOffset;
                             }
 
                             TimeSpan offsetbf = TimeSpan.FromSeconds(offset);
@@ -782,9 +779,9 @@ namespace WinFormsApp3
                         string wall = dateTimeOffset.ToOffset(TimeSpan.FromSeconds(Convert.ToDouble(rr.OffsetAfter))).ToString("yyyy-MM-ddTHH:mm:sszzz");
 
                         textBox3.Text += $"{ut.Replace(" ", "T")},{wall}\r\n";
-                        //if (i == 2 || i==3)
+                        //if (i == 2 || i == 3)
                         //{
-                        //  textBox4.Text += $"{zz},{fk},{rr.TimeDefinition},{ut.Replace(" ","T")},{wall},{(double)SavOffsets[i + 1] / 3600}\r\n";
+                        //    textBox4.Text += $"{zz},{fk},{rr.TimeDefinition},{ut.Replace(" ", "T")},{wall},{(double)SavOffsets[i + 1] / 3600}\r\n";
                         //}
                         i++;
                     }

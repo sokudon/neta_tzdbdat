@@ -172,13 +172,12 @@
             textBox4.ScrollBars = ScrollBars.Vertical;
             textBox4.Size = new Size(125, 328);
             textBox4.TabIndex = 14;
-            textBox4.Visible = false;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(760, 450);
+            ClientSize = new Size(761, 450);
             Controls.Add(textBox4);
             Controls.Add(label1);
             Controls.Add(comboBox1);
